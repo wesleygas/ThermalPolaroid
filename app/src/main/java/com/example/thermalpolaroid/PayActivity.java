@@ -45,6 +45,7 @@ public class PayActivity extends AppCompatActivity {
         Bundle extras = getIntent().getExtras();
         image_uri = extras.getString("image_uri");
         bitmapImage = getPic();
+
         Button buttonFinish = (Button)findViewById(R.id.buttonPay);
 
         buttonFinish.setOnClickListener(new View.OnClickListener() {
@@ -60,7 +61,7 @@ public class PayActivity extends AppCompatActivity {
 
     private Bitmap getPic() {
         // Get the dimensions of the View
-        int targetW = 384;
+        int targetW = 1200;
         //int targetH = ;
 
         // Get the dimensions of the bitmap

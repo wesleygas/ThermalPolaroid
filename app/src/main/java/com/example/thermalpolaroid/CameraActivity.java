@@ -152,7 +152,7 @@ public class CameraActivity extends AppCompatActivity {
         //int photoH = bmOptions.outHeight;
 
         // Determine how much to scale down the image
-        int scaleFactor = photoW/targetW;
+        int scaleFactor = targetW/photoW;
 
         // Decode the image file into a Bitmap sized to fill the View
         bmOptions.inJustDecodeBounds = false;
