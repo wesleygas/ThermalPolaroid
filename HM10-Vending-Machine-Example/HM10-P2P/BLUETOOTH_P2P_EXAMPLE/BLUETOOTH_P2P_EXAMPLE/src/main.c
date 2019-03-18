@@ -90,7 +90,7 @@ void hm10_config_server(void) {
 	usart_enable_tx(USART0);
 	usart_enable_rx(USART0);
 	
-	 // RX - PB0  TX - PB1 
+	 // TX - PB0 | RX - PB1 
 	 pio_configure(PIOB, PIO_PERIPH_C, (1 << 0), PIO_DEFAULT);
 	 pio_configure(PIOB, PIO_PERIPH_C, (1 << 1), PIO_DEFAULT);
 }
@@ -117,7 +117,7 @@ int hm10_server_init(void) {
 	usart_send_command(USART0, buffer_rx, 1000, "AT", 200);
 	usart_send_command(USART0, buffer_rx, 1000, "AT+RESET", 400);
 	usart_log("hm10_server_init", buffer_rx);	
-	usart_send_command(USART0, buffer_rx, 1000, "AT+NAMEServer", 400);
+	usart_send_command(USART0, buffer_rx, 1000, "AT+NAMEThermalPolaroid", 400);
 	usart_log("hm10_server_init", buffer_rx);
 	usart_send_command(USART0, buffer_rx, 1000, "AT+FILT0", 400);
 	usart_log("hm10_server_init", buffer_rx);
