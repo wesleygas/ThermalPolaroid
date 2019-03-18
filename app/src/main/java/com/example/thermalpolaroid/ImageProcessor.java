@@ -16,6 +16,14 @@ public class ImageProcessor {
         int oldWidth = imageToConvert.getWidth();
 
         int oldHeight = imageToConvert.getHeight();
+        System.out.println("Original Width: " + Integer.toString(oldWidth));
+        System.out.println("Original Height " + Integer.toString(oldHeight));
+        if(height > oldHeight){
+            height = oldHeight;
+        }
+        if(width > oldWidth){
+            width = oldWidth;
+        }
 
         float scaleWidth = ((float) width) / oldWidth;
 
@@ -34,19 +42,21 @@ public class ImageProcessor {
     }
 
     public static Bitmap colorToGray(Bitmap imageToConvert){
-        int width, height;
-        height = imageToConvert.getHeight();
-        width = imageToConvert.getWidth();
+        int width = imageToConvert.getWidth();
+        int height = imageToConvert.getHeight();
 
-        Bitmap grayImage = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        Canvas c = new Canvas(grayImage);
+        Bitmap dest = Bitmap.createBitmap(width, height,
+                Bitmap.Config.RGB_565);
+
+        Canvas canvas = new Canvas(dest);
         Paint paint = new Paint();
-        ColorMatrix cm = new ColorMatrix();
-        cm.setSaturation(0);
-        ColorMatrixColorFilter f = new ColorMatrixColorFilter(cm);
-        paint.setColorFilter(f);
-        c.drawBitmap(grayImage, 0, 0, paint);
-        return grayImage;
+        ColorMatrix colorMatrix = new ColorMatrix();
+        colorMatrix.setSaturation(0); //value of 0 maps the color to gray-scale
+        ColorMatrixColorFilter filter = new ColorMatrixColorFilter(colorMatrix);
+        paint.setColorFilter(filter);
+        canvas.drawBitmap(imageToConvert, 0, 0, paint);
+
+        return dest;
     }
 
     public static Bitmap ditchingImage(Bitmap imageToConvert){
@@ -63,4 +73,6 @@ public class ImageProcessor {
         byte [] arr=baos.toByteArray();
         return Base64.encodeToString(arr, Base64.DEFAULT);
     }
+
+
 }
