@@ -33,18 +33,19 @@
 #include <manu.h>
 
 //BLuetooth USART
-#define BT_NAME USART0
-#define BT_ID ID_USART0
+#define BT_NAME USART2
+#define BT_ID ID_USART2
+//RX - PD16 ||||| TX - PD15
 //Bluetooth RX
-#define BT_RX_PIO PIOB
-#define BT_RX_PERIPH PIO_PERIPH_C
-#define BT_RX_PIO 1u
+#define BT_RX_PIO PIOD
+#define BT_RX_PERIPH PIO_PERIPH_B
+#define BT_RX_PIO 15u
 #define BT_RX_PIO_MASK (1 << BT_RX_PIO)
 
 //Bluetooth TX
-#define BT_TX_PIO PIOB
-#define BT_TX_PERIPH PIO_PERIPH_C
-#define BT_TX_PIO 0u
+#define BT_TX_PIO PIOD
+#define BT_TX_PERIPH PIO_PERIPH_B
+#define BT_TX_PIO 16u
 #define BT_TX_PIO_MASK (1 << BT_TX_PIO)
 
 volatile long g_systimer = 0;
