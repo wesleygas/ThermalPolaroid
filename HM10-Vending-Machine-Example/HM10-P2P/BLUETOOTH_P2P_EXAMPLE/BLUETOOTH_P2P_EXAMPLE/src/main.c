@@ -32,6 +32,21 @@
 #include <string.h>
 #include <manu.h>
 
+//BLuetooth USART
+#define BT_NAME USART0
+#define BT_ID ID_USART0
+//Bluetooth RX
+#define BT_RX_PIO PIOB
+#define BT_RX_PERIPH PIO_PERIPH_C
+#define BT_RX_PIO 1u
+#define BT_RX_PIO_MASK (1 << BT_RX_PIO)
+
+//Bluetooth TX
+#define BT_TX_PIO PIOB
+#define BT_TX_PERIPH PIO_PERIPH_C
+#define BT_TX_PIO 0u
+#define BT_TX_PIO_MASK (1 << BT_TX_PIO)
+
 volatile long g_systimer = 0;
 
 void SysTick_Handler() {
@@ -60,7 +75,7 @@ int usart_get_string(Usart *usart, char buffer[], int bufferlen, int timeout_ms)
 void usart_put_array_char(Usart *usart, char str[]) {
   usart_serial_write_packet(usart, str, strlen(str));
 }
-//sera que estava imprimindo unnsigned
+
 void usart_put_char(Usart *usart, unsigned char n) {
   usart_serial_putchar(usart, n);
 }
@@ -110,13 +125,12 @@ void hm10_config_server(void) {
 	config.charlength = US_MR_CHRL_8_BIT;
 	config.paritytype = US_MR_PAR_NO;
 	config.stopbits = false;
-	usart_serial_init(USART0, &config);
-	usart_enable_tx(USART0);
-	usart_enable_rx(USART0);
-	
-	 // TX - PB0 | RX - PB1 
-	 pio_configure(PIOB, PIO_PERIPH_C, (1 << 0), PIO_DEFAULT);
-	 pio_configure(PIOB, PIO_PERIPH_C, (1 << 1), PIO_DEFAULT);
+	usart_serial_init(BT_NAME, &config);
+	usart_enable_tx(BT_NAME);
+	usart_enable_rx(BT_NAME);
+	 
+	 pio_configure(BT_TX_PIO, BT_TX_PERIPH, BT_TX_PIO_MASK, PIO_DEFAULT);
+	 pio_configure(BT_RX_PIO, BT_RX_PERIPH, BT_RX_PIO_MASK, PIO_DEFAULT);
 }
 
 void hm10_config_client(void) {
@@ -136,18 +150,18 @@ void hm10_config_client(void) {
 
 int hm10_server_init(void) {
 	char buffer_rx[128];
-	usart_send_command(USART0, buffer_rx, 1000, "AT", 200);
-	usart_send_command(USART0, buffer_rx, 1000, "AT", 200);
-	usart_send_command(USART0, buffer_rx, 1000, "AT", 200);
-	usart_send_command(USART0, buffer_rx, 1000, "AT+RESET", 400);
+	usart_send_command(BT_NAME, buffer_rx, 1000, "AT", 200);
+	usart_send_command(BT_NAME, buffer_rx, 1000, "AT", 200);
+	usart_send_command(BT_NAME, buffer_rx, 1000, "AT", 200);
+	usart_send_command(BT_NAME, buffer_rx, 1000, "AT+RESET", 400);
 	usart_log("hm10_server_init", buffer_rx);	
-	usart_send_command(USART0, buffer_rx, 1000, "AT+NAMEThermalPolaroid", 400);
+	usart_send_command(BT_NAME, buffer_rx, 1000, "AT+NAMETPolaroid", 400);
 	usart_log("hm10_server_init", buffer_rx);
-	usart_send_command(USART0, buffer_rx, 1000, "AT+FILT0", 400);
+	usart_send_command(BT_NAME, buffer_rx, 1000, "AT+FILT0", 400);
 	usart_log("hm10_server_init", buffer_rx);
-	usart_send_command(USART0, buffer_rx, 1000, "AT+SHOW1", 400);
+	usart_send_command(BT_NAME, buffer_rx, 1000, "AT+SHOW1", 400);
 	usart_log("hm10_server_init", buffer_rx);
-	usart_send_command(USART0, buffer_rx, 1000, "AT+ROLE0", 400);
+	usart_send_command(BT_NAME, buffer_rx, 1000, "AT+ROLE0", 400);
 	usart_log("hm10_server_init", buffer_rx);
 }
 
@@ -225,8 +239,8 @@ int main (void)
 
 	
 	while(1) {
-		usart_put_string(USART0, "HM10-OI");
-		usart_get_string(USART0, buffer, 1024, 1000);
+		usart_put_string(BT_NAME, "HM10-OI");
+		usart_get_string(BT_NAME, buffer, 1024, 1000);
 		usart_log("main", buffer);
 	}
 	
