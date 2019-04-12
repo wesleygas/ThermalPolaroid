@@ -27,7 +27,7 @@ def convert_and_output(filepath, filename):
         
         for line in grid_thresh:
             for pixel in range(0,len(line),8):
-                output.write(line[pixel] | line[pixel+1] <<1| line[pixel+2] <<2|line[pixel+3] <<3|line[pixel+4] <<4|line[pixel+5] <<5| line[pixel+6] <<6|line[pixel+7] <<7)
+                output.write(bytes(line[pixel] | line[pixel+1] <<1| line[pixel+2] <<2|line[pixel+3] <<3|line[pixel+4] <<4|line[pixel+5] <<5| line[pixel+6] <<6|line[pixel+7] <<7))
 
 
 for f in listdir(mypath):
