@@ -10,7 +10,6 @@ mypath = './tmp/'
 
 def convert_and_output(filepath, filename):
     filename = filename.split('.')[0]
-    print(filename)
     grid = cv2.imread(filepath)
 
     r = 384.0 / grid.shape[1]
@@ -24,7 +23,7 @@ def convert_and_output(filepath, filename):
     grid_thresh = 1*(grid_thresh<120)
 
 
-    with open('./tmp/{0}.bytes'.format(filename), 'wb') as output:
+    with open('./tmp/output/{0}.bytes'.format(filename), 'wb') as output:
         
         for line in grid_thresh:
             for pixel in range(0,len(line),8):
@@ -34,6 +33,5 @@ def convert_and_output(filepath, filename):
 for f in listdir(mypath):
     filepath = join(mypath, f)
     if isfile(filepath):
-        print(filepath)
         convert_and_output(filepath, f)
 
