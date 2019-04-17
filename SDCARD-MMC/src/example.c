@@ -23,15 +23,91 @@
 #define BT_TX_PIO 16u
 #define BT_TX_PIO_MASK (1 << BT_TX_PIO)
 
+/*
+* Potenciometro motorizado:
+* Utiliza os pinos:
+* PB2 - Leitura do potenciometro
+* PA0 - Entradas para controle do motor
+* PD28 - Entradas para controle do motor
+*/
+#define POT_AFEC         AFEC0
+#define POT_AFEC_ID      ID_AFEC0
+#define POT_AFEC_CH      AFEC_CHANNEL_5 // Pin PB2
+#define POT_AFEC_CH_IR   AFEC_INTERRUPT_EOC_5
+
+#define IN1_M1_A			PIOD
+#define IN1_M1_A_ID			ID_PIOD
+#define IN1_M1_A_IDX		28
+#define IN1_M1_A_IDX_MASK (1 << IN1_M1_A_IDX)
+
+#define IN2_M1_B			PIOA
+#define IN2_M1_B_ID			ID_PIOA
+#define IN2_M1_B_IDX		0
+#define IN2_M1_B_IDX_MASK (1 << IN2_M1_B_IDX)
+
 /************************************************************************/
 /* Global variables                                                     */
 /************************************************************************/
 volatile long g_systimer = 0;
 
+/** Flag para confirmação de conversão */
+volatile bool is_conversion_done = false;
+
+/** Variável para armazenar valor da conversão */
+volatile uint32_t g_ul_value = 0;
 
 /************************************************************************/
 /* Funtions                                                             */
 /************************************************************************/
+static void afec_pot_end_conversion(void){
+	g_ul_value = afec_channel_get_value(POT_AFEC, POT_AFEC_CH);
+	is_conversion_done = true;
+}
+
+void pot_init(void){
+	pmc_enable_periph_clk(POT_AFEC_ID);
+	afec_enable(POT_AFEC);
+	struct afec_config afec_cfg;
+	afec_get_config_defaults(&afec_cfg);
+	afec_init(POT_AFEC, &afec_cfg);
+	afec_set_trigger(POT_AFEC, AFEC_TRIG_SW);
+
+	struct afec_ch_config afec_ch_cfg;
+	afec_ch_get_config_defaults(&afec_ch_cfg);
+	afec_ch_cfg.gain = AFEC_GAINVALUE_0;
+	afec_ch_set_config(POT_AFEC, POT_AFEC_CH, &afec_ch_cfg);
+	afec_channel_set_analog_offset(AFEC0, AFEC_CHANNEL_5, 0x200); // internal ADC offset is 0x200, it should cancel it and shift to 0
+	afec_set_callback(POT_AFEC, POT_AFEC_CH_IR, afec_pot_end_conversion, 1);
+	afec_channel_enable(POT_AFEC, POT_AFEC_CH);
+	NVIC_SetPriority(AFEC0_IRQn, 10);
+}
+
+void pot_enable_interrupt(void){
+	afec_enable_interrupt(POT_AFEC, POT_AFEC_CH_IR);
+	NVIC_EnableIRQ(AFEC0_IRQn);
+}
+
+void pot_convert(void){
+	if(!is_conversion_done){
+		afec_start_software_conversion(AFEC0);
+	}
+}
+
+void init(){
+	pmc_enable_periph_clk(IN1_M1_A_ID);
+	pio_set_output(IN1_M1_A, IN1_M1_A_IDX_MASK, 1, 0, 0);
+	
+	pmc_enable_periph_clk(IN2_M1_B_ID);
+	pio_set_output(IN2_M1_B, IN2_M1_B_IDX_MASK, 1, 0, 0);
+	
+	pio_clear(IN1_M1_A, IN1_M1_A_IDX_MASK); //Desaciona Motor M1_A
+	pio_clear(IN2_M1_B, IN2_M1_B_IDX_MASK); //Desaciona Motor M1_B
+	
+	pot_init(); //Chama função de inicialização do potenciometro (AFEC0 / CHANNEL5) -> Pino PB2
+	pot_enable_interrupt(); //Habilita interrupção para a leitura analógica do AFEC0
+	
+}
+
 void SysTick_Handler() {
   g_systimer++;
 }
@@ -179,6 +255,10 @@ int main(void) {
 
   sysclk_init();
   board_init();
+  
+  init();
+  uint32_t g_percentage = 0;
+  
   delay_init();
   SysTick_Config(sysclk_get_cpu_hz() / 1000); // 1 ms
   debug_uart_config();
@@ -275,6 +355,14 @@ int main(void) {
 		int file_size = file_object.fsize;
 		UINT bytes_to_read = 48;
 		while (true) {
+			pot_convert();
+			
+			if(is_conversion_done){
+				g_percentage = (100*g_ul_value) / 4096; //Converte o valor lido em porcentagem
+				is_conversion_done = false;
+				delay_ms(40);
+			}
+			
 			progress = (float)counter*100/(float)file_size;
 			sprintf(file_name,"Progress: %.3f%%\n\r", progress);
 			puts(file_name);
@@ -297,6 +385,25 @@ int main(void) {
 				usart_put_char(USART0, image[j]);
 				//printf("%d ", image[j]);
 			}
+			
+			if(g_percentage>progress-3){
+				//Gira o Motor 1 no sentido horario
+				pio_set(IN1_M1_A, IN1_M1_A_IDX_MASK);
+				pio_clear(IN2_M1_B, IN2_M1_B_IDX_MASK);
+				delay_us(500);
+			}
+			
+			else if (g_percentage<progress+3){
+				//Gira o Motor 1 no sentido anti-horario
+				pio_clear(IN1_M1_A, IN1_M1_A_IDX_MASK);
+				pio_set(IN2_M1_B, IN2_M1_B_IDX_MASK);
+				delay_us(500);
+			}
+			
+			//Desaciona Motor
+			pio_clear(IN1_M1_A, IN1_M1_A_IDX_MASK);
+			pio_clear(IN2_M1_B, IN2_M1_B_IDX_MASK);
+			
 			usart_put_char(USART0, 27);
 			usart_put_char(USART0, 74);
 			usart_put_char(USART0, 0);
